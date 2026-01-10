@@ -1,0 +1,60 @@
+import base64
+from IntelArch import get_model
+from fastapi import UploadFile
+from torchvision import transforms
+import numpy as np
+from PIL import Image
+from io import BytesIO
+import torch
+
+
+normalize_mean = [0.485, 0.456, 0.406]
+normalize_std = [0.229, 0.224, 0.225]
+
+def arr_to_buffer(img):
+    img = Image.fromarray(img.astype(np.uint8))
+    buffered = BytesIO()
+    img.save(buffered, format="PNG")
+    return base64.b64encode(buffered.getvalue()).decode()
+
+def TransformToRGB(img: Image):
+    img_np = np.array(img)
+    imgR = np.zeros_like(img_np)
+    imgR[:, :, 0] = img_np[:, :, 0]
+    imgG = np.zeros_like(img_np)
+    imgG[:, :, 1] = img_np[:, :, 1] 
+    
+    imgB = np.zeros_like(img_np)
+    imgB[:, :, 2] = img_np[:, :, 2] 
+    
+    imgR_base64 = arr_to_buffer(imgR)
+    imgG_base64 = arr_to_buffer(imgG)
+    imgB_base64 = arr_to_buffer(imgB)
+    
+    print('Made fsdsdfsdfkls;f')
+    return imgR_base64, imgG_base64, imgB_base64
+
+
+def classify(file: UploadFile):
+    model = get_model()
+    device = next(model.parameters()).device
+    image_bytes = file.file.read()
+    
+    image = Image.open(BytesIO(image_bytes)).convert("RGB")
+    imgR_base64, imgG_base64, imgB_base64 = TransformToRGB(image)
+    
+    preprocess = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=normalize_mean, std=normalize_std)
+    ])
+    
+    input_tensor = preprocess(image).unsqueeze(0).to(device)
+    int_to_classes = ["glacier", "sea", "street", "forest", "buildings", "mountain"]
+    
+    with torch.no_grad():
+        output = model(input_tensor)
+    
+    predicted_class = torch.argmax(output, dim=1).item()
+    
+    return int_to_classes[predicted_class], imgR_base64, imgG_base64, imgB_base64
