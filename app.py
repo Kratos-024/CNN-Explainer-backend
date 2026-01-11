@@ -18,7 +18,6 @@ app.add_middleware(
 
 @app.post("/classify")
 async def get_image_pred(Img: UploadFile,):
-    print("oijfsdjodfdjofdosf")
     upload_dir = "upload"
     os.makedirs(upload_dir, exist_ok=True)
     
@@ -40,5 +39,12 @@ async def get_image_pred(Img: UploadFile,):
 async def getImageData(Img: UploadFile):
     file_content = await Img.read()
     shape,img_arr = convertImg_to_arr(file_content)      
+    return {"shape":shape,"img_data":img_arr.tolist()}         
+
+
+@app.post('/getImageData')
+async def getFeatureMapsImage(uniqueId,layer):
+    
+   
     return {"shape":shape,"img_data":img_arr.tolist()}         
 
