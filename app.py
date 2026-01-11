@@ -40,5 +40,5 @@ async def get_image_pred(Img: UploadFile,):
 async def getImageData(Img: UploadFile):
     file_content = await Img.read()
     shape,img_arr = convertImg_to_arr(file_content)      
-    return {"shape":shape,"img_data":img_arr}         
+    return {"shape":shape,"img_data":img_arr.tolist()}         
 
