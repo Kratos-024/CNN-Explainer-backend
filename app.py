@@ -1,9 +1,10 @@
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from img_file import convertImg_to_arr
 from model import classify
 import os
 from io import BytesIO
-
+import PIL
 app = FastAPI()
 
 app.add_middleware(
@@ -15,22 +16,15 @@ app.add_middleware(
 )
 
 
-@app.post("/")
-async def get_image(Img: UploadFile,):
+@app.post("/classify")
+async def get_image_pred(Img: UploadFile,):
     print("oijfsdjodfdjofdosf")
     upload_dir = "upload"
     os.makedirs(upload_dir, exist_ok=True)
     
     
     file_content = await Img.read()
-    file_path = os.path.join(upload_dir, Img.filename)
-    with open(file_path, "wb") as buffer:
-        buffer.write(file_content)
-    
-    
     Img.file = BytesIO(file_content)
-    
-    
     predicted_class, imgR_base64,imgG_base64,imgB_base64 = classify(Img)
    
         
@@ -41,3 +35,10 @@ async def get_image(Img: UploadFile,):
         "ImageG": imgG_base64,
         "ImageB": imgB_base64
     }
+
+@app.post('/getImageData')
+async def getImageData(Img: UploadFile):
+    file_content = await Img.read()
+    shape,img_arr = convertImg_to_arr(file_content)      
+    return {"shape":shape,"img_data":img_arr}         
+
