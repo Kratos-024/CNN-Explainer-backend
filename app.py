@@ -41,8 +41,9 @@ async def getImageData(Img: UploadFile, layer: int = 0):
     feat_ext = FeaturesExtraction(file_content)
     features = feat_ext.sendFeatures_kernels(layer)
 
-    return {"shape":features.shape,"img_data":features.tolist()}         
+    return {"success":features['success'],"firstConvLayer":features['firstConvLayer'],"firstReluLayer":features['firstReluLayer']}         
 
+    
 
 # @app.post('/getFeatureMapsImage')
 # async def getFeatureMapsImage(Img: UploadFile, layer: int = 0):

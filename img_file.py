@@ -22,17 +22,27 @@ class FeaturesExtraction:
         self.img_arr = PIL.Image.open(BytesIO(file_content))
         input_tensor = TRANSFORM(self.img_arr)
         self.input_tensor = input_tensor.unsqueeze(0)
-
     def convertImg_to_arr(self): 
         img_arr = np.array(self.img_arr)      
         return img_arr.shape, img_arr
 
     def sendFeatures_kernels(self, layer_index=0): 
-        first_layer = list(model.features.children())[layer_index]  
-        features = first_layer(self.input_tensor)
-        features = features.detach().cpu().numpy()[0][0:10]
-        features_base64 = [arr_to_buffer(feature) for feature in features]
-        return np.array(features_base64)
-    
-
+        first_layer = list(model.features.children())[layer_index] 
+        first_relu = list(model.features.children())[layer_index+2]  
         
+        first_convOutput = first_layer(self.input_tensor)
+        first_reluOutput = first_relu(first_convOutput) 
+        
+        first_convOutput = first_convOutput.detach().cpu().numpy()[0][0:10]
+        first_convOutput_base64 = [arr_to_buffer(feature) for feature in first_convOutput]
+        
+        first_reluOutput = first_reluOutput.detach().cpu().numpy()[0][0:10]
+        first_reluOutput_base64 = [arr_to_buffer(feature) for feature in first_reluOutput]
+
+        return {
+            'success': True,
+            'firstConvLayer': first_convOutput_base64,   # <- list of strings
+            'firstReluLayer': first_reluOutput_base64   # <- list of strings
+        }
+
+            
