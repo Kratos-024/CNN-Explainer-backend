@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from img_file import convertImg_to_arr
+from img_file import FeaturesExtraction
 from model import classify
 import os
 from io import BytesIO
@@ -36,15 +36,18 @@ async def get_image_pred(Img: UploadFile,):
     }
 
 @app.post('/getImageData')
-async def getImageData(Img: UploadFile):
+async def getImageData(Img: UploadFile, layer: int = 0):
     file_content = await Img.read()
-    shape,img_arr = convertImg_to_arr(file_content)      
-    return {"shape":shape,"img_data":img_arr.tolist()}         
+    feat_ext = FeaturesExtraction(file_content)
+    features = feat_ext.sendFeatures_kernels(layer)
+
+    return {"shape":features.shape,"img_data":features.tolist()}         
 
 
-@app.post('/getImageData')
-async def getFeatureMapsImage(uniqueId,layer):
-    
-   
-    return {"shape":shape,"img_data":img_arr.tolist()}         
-
+# @app.post('/getFeatureMapsImage')
+# async def getFeatureMapsImage(Img: UploadFile, layer: int = 0):
+#     file_content = await Img.read()
+#     feat_ext = FeaturesExtraction(file_content)
+#     features = feat_ext.sendFeatures_kernels(layer)
+#     print(features)
+#     return {"shape": features.shape, "features": features.tolist()}
