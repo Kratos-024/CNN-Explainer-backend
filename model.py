@@ -31,7 +31,6 @@ def TransformToRGB(img: Image):
     imgG_base64 = arr_to_buffer(imgG)
     imgB_base64 = arr_to_buffer(imgB)
     
-    print('Made fsdsdfsdfkls;f')
     return imgR_base64, imgG_base64, imgB_base64
 
 

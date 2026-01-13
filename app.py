@@ -39,9 +39,9 @@ async def get_image_pred(Img: UploadFile,):
 async def getImageData(Img: UploadFile, layer: int = 0):
     file_content = await Img.read()
     feat_ext = FeaturesExtraction(file_content)
-    features = feat_ext.sendFeatures_kernels(layer)
-
-    return {"success":features['success'],"firstConvLayer":features['firstConvLayer'],"firstReluLayer":features['firstReluLayer']}         
+    features = feat_ext.sendFeatures(layer)
+    print('got thje features')
+    return {"success":features['success'],"first_conv_images":features['first_conv_images'],"first_relu_images":features['first_relu_images']}         
 
     
 

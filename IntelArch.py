@@ -10,21 +10,25 @@ class IntelModel(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
             nn.Dropout(0.2),
+
             nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
             nn.Dropout(0.2),
+
             nn.Conv2d(in_channels=128, out_channels=512, kernel_size=3, stride=1),
             nn.BatchNorm2d(512),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
             nn.Dropout(0.2),
+
             nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=3, stride=1),
             nn.BatchNorm2d(1024),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
             nn.Dropout(0.2),
+            
         )
         self.gap = nn.AdaptiveAvgPool2d((1, 1))
         self.classifier = nn.Sequential(
