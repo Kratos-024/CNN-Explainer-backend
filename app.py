@@ -24,12 +24,12 @@ async def get_image_pred(Img: UploadFile,):
     
     file_content = await Img.read()
     Img.file = BytesIO(file_content)
-    predicted_class, imgR_base64,imgG_base64,imgB_base64 = classify(Img)
+    softMax_prob, imgR_base64,imgG_base64,imgB_base64 = classify(Img)
    
         
     return {
         "message": f"Saved {Img.filename}",
-        "predicted_class": predicted_class,
+        "softMax_prob": f'{softMax_prob.tolist()}',
         "ImageR": imgR_base64,
         "ImageG": imgG_base64,
         "ImageB": imgB_base64
@@ -38,10 +38,10 @@ async def get_image_pred(Img: UploadFile,):
 @app.post('/getImageData')
 async def getImageData(Img: UploadFile, layer: int = 0):
     file_content = await Img.read()
-    feat_ext = FeaturesExtraction(file_content)
-    features = feat_ext.sendFeatures(layer)
+    feat_cls = FeaturesExtraction(file_content)
+    features = feat_cls.sendFeatures_kernels()
     print('got thje features')
-    return {"success":features['success'],"first_conv_images":features['first_conv_images'],"first_relu_images":features['first_relu_images']}         
+    return {"success":features['success'],"data":features['data'],}         
 
     
 

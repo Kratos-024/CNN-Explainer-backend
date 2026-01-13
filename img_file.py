@@ -5,6 +5,9 @@ import numpy as np
 from torchvision import transforms
 from IntelArch import get_model
 import torch
+import matplotlib.cm as cm 
+import base64
+
 model = get_model()
 model.eval()
 
@@ -48,25 +51,69 @@ class FeaturesExtraction:
     #         'firstReluLayer': first_reluOutput_base64  
     #     }
 
-                    
-    def sendFeatures_kernels(self): 
-                
+                        
+    def sendFeatures_kernels(self):
+         
         target_indices = [0, 2, 5, 7, 8, 10, 12, 13, 15, 17, 18]
         captured_features = {} 
         x = self.input_tensor
+            
         for i, layer in enumerate(model.features.children()):
             x = layer(x)
+                
             if i in target_indices:
                 output_tensor = x.detach().cpu()
+                    
+                  
                 channel_scores = output_tensor[0].view(output_tensor.shape[1], -1).sum(dim=1)
                 _, top_indices = torch.topk(channel_scores, k=10)
                 selected_maps = output_tensor[0][top_indices].numpy()
-                captured_features[f"layer_{i}"] = [arr_to_buffer(feature) for feature in selected_maps]
-                if i == 18:
-                    break
-       
+                    
 
+                processed_maps = []
+                for feature in selected_maps:
+                    min_val = feature.min()
+                    max_val = feature.max()
+                        
+                    if max_val - min_val > 0:
+                        norm_feature = (feature - min_val) / (max_val - min_val + 1e-5)
+                        norm_feature = (norm_feature * 255).astype(np.uint8)
+                    else:
+                        norm_feature = feature.astype(np.uint8)
+                            
+                    processed_maps.append(self.arr_to_buffer(norm_feature))
+
+                captured_features[f"layer_{i}"] = processed_maps
+                    
+                if i == 18:
+                        break
 
         return {
-            'success': True,
-             'data': captured_features}
+                'success': True,
+                'data': captured_features
+            }
+
+    def arr_to_buffer(self,img_arr):
+            # 1. Normalize to 0-1 range (Matplotlib expects floats 0.0 - 1.0)
+            # img_arr is likely uint8 (0-255), so divide by 255
+            if img_arr.dtype == np.uint8:
+                norm_arr = img_arr / 255.0
+            else:
+                norm_arr = (img_arr - img_arr.min()) / (img_arr.max() - img_arr.min() + 1e-5)
+
+            # 2. Apply Colormap (e.g., 'viridis', 'plasma', 'inferno', 'magma')
+            # This turns (H, W) -> (H, W, 4) (RGBA)
+            colored_map = cm.viridis(norm_arr) 
+            
+            # 3. Convert to 0-255 integers
+            colored_map = (colored_map * 255).astype(np.uint8)
+            
+            # 4. Create Image (Mode is now 'RGBA' because of the colormap)
+            im = PIL.Image.fromarray(colored_map)
+            
+            # 5. Save to buffer
+            buffer = BytesIO()
+            im.save(buffer, format="PNG")
+            img_str = base64.b64encode(buffer.getvalue()).decode("utf-8")
+            
+            return img_str

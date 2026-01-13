@@ -53,7 +53,7 @@ def classify(file: UploadFile):
     
     with torch.no_grad():
         output = model(input_tensor)
-    
-    predicted_class = torch.argmax(output, dim=1).item()
-    
-    return int_to_classes[predicted_class], imgR_base64, imgG_base64, imgB_base64
+
+    softMax_prob = torch.softmax(output, dim=-1)
+
+    return softMax_prob, imgR_base64, imgG_base64, imgB_base64
