@@ -1,7 +1,8 @@
-from fastapi import FastAPI, UploadFile
+import base64
+from fastapi import FastAPI, UploadFile,Request
 from fastapi.middleware.cors import CORSMiddleware
 from img_file import FeaturesExtraction
-from model import classify
+from model import apply_dropout, classify
 import os
 from io import BytesIO
 import PIL
@@ -43,12 +44,22 @@ async def getImageData(Img: UploadFile, layer: int = 0):
     print('got thje features')
     return {"success":features['success'],"data":features['data'],}         
 
-    
+@app.post('/applyDropout')
+async def applyDropout(request: Request):
+    data = await request.json()  
+    imgs_base64 = data["Img"]       
+    results = []
 
-# @app.post('/getFeatureMapsImage')
-# async def getFeatureMapsImage(Img: UploadFile, layer: int = 0):
-#     file_content = await Img.read()
-#     feat_ext = FeaturesExtraction(file_content)
-#     features = feat_ext.sendFeatures_kernels(layer)
-#     print(features)
-#     return {"shape": features.shape, "features": features.tolist()}
+    for b64 in imgs_base64:
+        if b64.startswith("data:image"):
+            b64 = b64.split(",")[1]
+        image_bytes = base64.b64decode(b64)
+        img = PIL.Image.open(BytesIO(image_bytes)).convert("RGB")  
+        img_dropped = apply_dropout(img)  
+        buffered = BytesIO()
+        img_dropped.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+        results.append(img_str)
+
+    return {"images": results, "success": True}
+   

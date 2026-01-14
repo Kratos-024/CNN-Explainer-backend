@@ -17,7 +17,7 @@ def arr_to_buffer(img):
     img.save(buffered, format="PNG")
     return base64.b64encode(buffered.getvalue()).decode()
 
-def TransformToRGB(img: Image):
+def TransformToBase64(img: Image):
     img_np = np.array(img)
     imgR = np.zeros_like(img_np)
     imgR[:, :, 0] = img_np[:, :, 0]
@@ -40,7 +40,7 @@ def classify(file: UploadFile):
     image_bytes = file.file.read()
     
     image = Image.open(BytesIO(image_bytes)).convert("RGB")
-    imgR_base64, imgG_base64, imgB_base64 = TransformToRGB(image)
+    imgR_base64, imgG_base64, imgB_base64 = TransformToBase64(image)
     
     preprocess = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -57,3 +57,18 @@ def classify(file: UploadFile):
     softMax_prob = torch.softmax(output, dim=-1)
 
     return softMax_prob, imgR_base64, imgG_base64, imgB_base64
+
+
+
+
+def apply_dropout(img):
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor()
+    ])
+    x = transform(img).unsqueeze(0) 
+    x_dropped = torch.nn.functional.dropout(x, p=0.2, training=True)
+    img_np = x_dropped.squeeze(0).permute(1, 2, 0).numpy()
+    img_np = (img_np * 255).clip(0, 255).astype(np.uint8)
+    
+    return Image.fromarray(img_np)
