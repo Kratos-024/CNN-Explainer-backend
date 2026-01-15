@@ -10,11 +10,18 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['https://cnn-explainer-frontend.vercel.app/'],
+    # allow_origins=['http://localhost:5173'],
+    allow_origins=['https://cnn-explainer-frontend.vercel.app'],
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
 )
+@app.get("/get")
+async def testing():
+    print('Got the request')   
+    return {
+        "message": "Hello World"
+    }
 
 
 @app.post("/classify")
