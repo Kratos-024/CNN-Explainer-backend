@@ -1,6 +1,5 @@
 from io import BytesIO
 import PIL
-from model import arr_to_buffer
 import numpy as np
 from torchvision import transforms
 from IntelArch import get_model
@@ -14,63 +13,45 @@ model.eval()
 normalize_mean = [0.485, 0.456, 0.406]
 normalize_std  = [0.229, 0.224, 0.225]
 TRANSFORM = transforms.Compose([
-    transforms.Resize((224,224)),
+    transforms.Resize((150,150)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=normalize_mean,std=normalize_std)
+    transforms.Normalize(mean=normalize_mean, std=normalize_std)
 ])
 
 class FeaturesExtraction:
     def __init__(self, file_content):
         self.file_content = file_content
-        self.img_arr = PIL.Image.open(BytesIO(file_content))
+        self.img_arr = PIL.Image.open(BytesIO(file_content)).convert("RGB")
         input_tensor = TRANSFORM(self.img_arr)
         self.input_tensor = input_tensor.unsqueeze(0)
+
     def convertImg_to_arr(self): 
         img_arr = np.array(self.img_arr)      
         return img_arr.shape, img_arr
-
-    # def sendFeatures_kernels(self, layer_index=0): 
-    #     first_layer = list(model.features.children())[layer_index] 
-    #     first_relu = list(model.features.children())[layer_index+2]  
-    #     print('list(model.features.children())',len(list(model.features.children())))
-    #     print('list(model.features.children())',len(list(model.classifier.children())))
-        
-        
-    #     first_convOutput = first_layer(self.input_tensor)
-    #     first_reluOutput = first_relu(first_convOutput) 
-        
-    #     first_convOutput = first_convOutput.detach().cpu().numpy()[0][0:10]
-    #     first_convOutput_base64 = [arr_to_buffer(feature) for feature in first_convOutput]
-        
-    #     first_reluOutput = first_reluOutput.detach().cpu().numpy()[0][0:10]
-    #     first_reluOutput_base64 = [arr_to_buffer(feature) for feature in first_reluOutput]
-
-    #     return {
-    #         'success': True,
-    #         'firstConvLayer': first_convOutput_base64,  
-    #         'firstReluLayer': first_reluOutput_base64  
-    #     }
-
                         
     def sendFeatures_kernels(self):
-         
-        # target_indices = [0, 2, 5, 7, 8, 10, 12, 13, 15, 17, 18]
-        target_indices = [0, 1, 2, 3,4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18]
+        target_indices = range(20) 
 
         captured_features = {} 
         x = self.input_tensor
+   
+        all_layers = []
+        all_layers.extend(list(model.conv1.children()))
+        all_layers.extend(list(model.conv2.children()))
+        all_layers.extend(list(model.conv3.children()))
+        all_layers.extend(list(model.conv4.children()))
+   
             
-        for i, layer in enumerate(model.features.children()):
+        for i, layer in enumerate(all_layers):
             x = layer(x)
                 
             if i in target_indices:
                 output_tensor = x.detach().cpu()
-                    
-                  
                 channel_scores = output_tensor[0].view(output_tensor.shape[1], -1).sum(dim=1)
-                _, top_indices = torch.topk(channel_scores, k=10)
+                k = min(10, len(channel_scores))
+                _, top_indices = torch.topk(channel_scores, k=k)
+                
                 selected_maps = output_tensor[0][top_indices].numpy()
-                    
 
                 processed_maps = []
                 for feature in selected_maps:
@@ -87,33 +68,24 @@ class FeaturesExtraction:
 
                 captured_features[f"layer_{i}"] = processed_maps
                     
-                if i == 18:
-                        break
+            if i >= 20:
+                break
 
         return {
                 'success': True,
                 'data': captured_features
             }
 
-    def arr_to_buffer(self,img_arr):
-            # 1. Normalize to 0-1 range (Matplotlib expects floats 0.0 - 1.0)
-            # img_arr is likely uint8 (0-255), so divide by 255
+    def arr_to_buffer(self, img_arr):
             if img_arr.dtype == np.uint8:
                 norm_arr = img_arr / 255.0
             else:
                 norm_arr = (img_arr - img_arr.min()) / (img_arr.max() - img_arr.min() + 1e-5)
-
-            # 2. Apply Colormap (e.g., 'viridis', 'plasma', 'inferno', 'magma')
-            # This turns (H, W) -> (H, W, 4) (RGBA)
             colored_map = cm.viridis(norm_arr) 
             
-            # 3. Convert to 0-255 integers
             colored_map = (colored_map * 255).astype(np.uint8)
-            
-            # 4. Create Image (Mode is now 'RGBA' because of the colormap)
             im = PIL.Image.fromarray(colored_map)
             
-            # 5. Save to buffer
             buffer = BytesIO()
             im.save(buffer, format="PNG")
             img_str = base64.b64encode(buffer.getvalue()).decode("utf-8")

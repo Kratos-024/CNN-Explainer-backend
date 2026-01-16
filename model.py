@@ -1,6 +1,7 @@
 import base64
 from IntelArch import get_model
 from fastapi import UploadFile
+from img_file import TRANSFORM
 from torchvision import transforms
 import numpy as np
 from PIL import Image
@@ -42,14 +43,9 @@ def classify(file: UploadFile):
     image = Image.open(BytesIO(image_bytes)).convert("RGB")
     imgR_base64, imgG_base64, imgB_base64 = TransformToBase64(image)
     
-    preprocess = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=normalize_mean, std=normalize_std)
-    ])
-    
-    input_tensor = preprocess(image).unsqueeze(0).to(device)
-    int_to_classes = ["glacier", "sea", "street", "forest", "buildings", "mountain"]
+
+    input_tensor = TRANSFORM(image).unsqueeze(0).to(device)
+    int_to_classes = ["buildings", "forest", "glacier", "mountain", "sea", "street"]
     
     with torch.no_grad():
         output = model(input_tensor)
