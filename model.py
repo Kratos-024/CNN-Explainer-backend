@@ -59,7 +59,7 @@ def classify(file: UploadFile):
 
 def apply_dropout(img):
     transform = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize((150, 150)),
         transforms.ToTensor()
     ])
     x = transform(img).unsqueeze(0) 

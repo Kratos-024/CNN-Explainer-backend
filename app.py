@@ -1,5 +1,5 @@
 import base64
-from fastapi import FastAPI, UploadFile,Request
+from fastapi import FastAPI, UploadFile,Request,Form
 from fastapi.middleware.cors import CORSMiddleware
 from img_file import FeaturesExtraction
 from model import apply_dropout, classify
@@ -44,12 +44,23 @@ async def get_image_pred(Img: UploadFile,):
     }
 
 @app.post('/getImageData')
-async def getImageData(Img: UploadFile, layer: int = 0):
+async def getImageData(
+    Img: UploadFile, 
+    layers: str = Form("0,2,5,7,8,10,12,13,15,17,18")
+):
+    try:
+        layer_list = [int(x) for x in layers.split(",")]
+    except:
+        layer_list = [0, 2, 5, 7, 8, 10, 12, 13, 15, 17, 18]
+
     file_content = await Img.read()
     feat_cls = FeaturesExtraction(file_content)
-    features = feat_cls.sendFeatures_kernels()
-    print('got thje features')
-    return {"success":features['success'],"data":features['data'],}         
+    features = feat_cls.sendFeatures_kernels(requested_layers=layer_list)
+    
+    print('Generated features for layers:', layer_list)
+    return {"success": features['success'], "data": features['data']}
+
+
 
 @app.post('/applyDropout')
 async def applyDropout(request: Request):
