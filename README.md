@@ -21,14 +21,13 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ## Endpoints
 
-* `GET /get` → Health check
-* `POST /classify` → Classify image (file form data: `Img`)
-* `POST /getImageData` → Extract features (optional `layers` parameter)
-* `POST /applyDropout` → Apply dropout to image (JSON: `Img` as base64)
+- `GET /get` → Health check
+- `POST /classify` → Classify image (file form data: `Img`)
+- `POST /getImageData` → Extract features (optional `layers` parameter)
+- `POST /applyDropout` → Apply dropout to image (JSON: `Img` as base64)
 
 ## Notes
 
-* Model file: `intel_complete_model.pt`
-* Uses GPU if available
-* API is CORS-enabled for frontend integration
-
+- Model file: `intel_complete_model.pt`
+- Uses GPU if available
+- API is CORS-enabled for frontend integration
