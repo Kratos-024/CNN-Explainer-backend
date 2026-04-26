@@ -79,3 +79,4 @@ class FeaturesExtraction:
             im.save(buffer, format="JPEG", quality=70)
             img_str = base64.b64encode(buffer.getvalue()).decode("utf-8")
             return img_str
+    

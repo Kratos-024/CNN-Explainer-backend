@@ -6,15 +6,16 @@ from model import apply_dropout, classify
 import os
 from io import BytesIO
 import PIL
+from DropoutEffect import get_dropout_comparison
+
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=[''],
-    allow_origins=['https://cnn-explainer-frontend.vercel.app','http://localhost:5173'],
-    allow_credentials=False,
-    allow_methods=['*'],
-    allow_headers=['*'],
+    allow_origins=["*"],  # Use "*" temporarily to see if the error disappears
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 @app.get("/get")
 async def testing():
@@ -80,4 +81,10 @@ async def applyDropout(request: Request):
         results.append(img_str)
 
     return {"images": results, "success": True}
-   
+
+
+@app.post('/getDropoutData')
+async def GetDropoutData(Img: UploadFile):
+    file_content = await Img.read()
+    result = get_dropout_comparison(file_content)
+    return result
